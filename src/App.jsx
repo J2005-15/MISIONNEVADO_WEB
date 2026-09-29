@@ -3,32 +3,49 @@ import { PawPrint, Calendar, Heart, AlertTriangle, MapPin, X, Send, Menu } from 
 import logoNevado from './assets/Logo_Nevado.png'
 import imagenHero from './assets/Hero.jpg'
 
-// ─── DATOS INICIALES (MOCK) ───────────────────────────────────────────────────
+// URL del backend: en local viene de .env; en Netlify, de sus variables de entorno
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-const HERO_INICIAL = {
-  badge:             'Fundación de Rescate Animal',
-  titulo_inicio:     'Dale una ',
-  titulo_acento:     'segunda oportunidad',
-  titulo_fin:        ' a quien lo necesita.',
-  descripcion:       'Trabajamos incansablemente para brindar atención médica, resguardo y familias amorosas a la fauna vulnerable en La Grita - Táchira.',
-  imagen_url:        null,
-  imagen_frontal_url:'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
+// POST JSON al backend; si no responde 2xx lanza un error con el mensaje del servidor
+async function enviarAlBackend(ruta, cuerpo) {
+  const res = await fetch(`${API}${ruta}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cuerpo),
+  })
+  if (!res.ok) {
+    const datos = await res.json().catch(() => ({}))
+    throw new Error(datos.mensaje || 'No se pudo enviar la información. Intenta de nuevo.')
+  }
+  return res.json()
 }
 
-const pacientesMock = [
-  { ADOPCI_ID: 101, ADOPCI_FT: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Boby',  ADOPCI_ES: 'Canino', ADOPCI_SE: 'Macho',  ADOPCI_RA: 'Mestizo',      ADOPCI_CO: 'Marrón',         ADOPCI_FN: '2024-03-15', ADOPCI_PE: 12.5, ADOPCI_DE: 'Muy juguetón y protector. Rescatado en Campo Alegre tras ser abandonado. Ideal para familias activas.', ADOPCI_ST: 'DISPONIBLE' },
-  { ADOPCI_ID: 102, ADOPCI_FT: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Luna',  ADOPCI_ES: 'Felino', ADOPCI_SE: 'Hembra', ADOPCI_RA: 'Doméstico',    ADOPCI_CO: 'Blanco',          ADOPCI_FN: '2025-01-20', ADOPCI_PE: 3.2,  ADOPCI_DE: 'Tranquila y cariñosa. Disfruta tomar siestas al sol. Perfecta para hogares acogedores y serenos.',      ADOPCI_ST: 'DISPONIBLE' },
-  { ADOPCI_ID: 103, ADOPCI_FT: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Max',   ADOPCI_ES: 'Canino', ADOPCI_SE: 'Macho',  ADOPCI_RA: 'Labrador',     ADOPCI_CO: 'Amarillo',        ADOPCI_FN: '2025-09-10', ADOPCI_PE: 8.0,  ADOPCI_DE: 'Lleno de energía y curiosidad. Le encantan los paseos, aprender trucos y jugar con pelotas.',           ADOPCI_ST: 'DISPONIBLE' },
-  { ADOPCI_ID: 104, ADOPCI_FT: 'https://images.unsplash.com/photo-1601758177266-bc599de87707?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Rocky', ADOPCI_ES: 'Canino', ADOPCI_SE: 'Macho',  ADOPCI_RA: 'Pastor Alemán', ADOPCI_CO: 'Negro y marrón', ADOPCI_FN: '2023-06-01', ADOPCI_PE: 30.0, ADOPCI_DE: 'De apariencia imponente pero corazón noble. Excelente guardián e incondicional compañero familiar.',    ADOPCI_ST: 'DISPONIBLE' },
-  { ADOPCI_ID: 105, ADOPCI_FT: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Bella', ADOPCI_ES: 'Felino', ADOPCI_SE: 'Hembra', ADOPCI_RA: 'Siamés',       ADOPCI_CO: 'Crema y café',   ADOPCI_FN: '2024-04-12', ADOPCI_PE: 4.5,  ADOPCI_DE: 'Curiosa, elegante e independiente. Se adapta muy bien a departamentos y convivencia con otros gatos.',  ADOPCI_ST: 'EN PROCESO' },
-  { ADOPCI_ID: 106, ADOPCI_FT: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=600&q=80', ADOPCI_NO: 'Zeus',  ADOPCI_ES: 'Canino', ADOPCI_SE: 'Macho',  ADOPCI_RA: 'Mestizo',      ADOPCI_CO: 'Marrón oscuro',  ADOPCI_FN: '2021-11-05', ADOPCI_PE: 22.0, ADOPCI_DE: 'Un guerrero sobreviviente, muy dócil y obediente. A pesar de su edad, tiene mucho amor para dar.',    ADOPCI_ST: 'DISPONIBLE' },
+// ─── VALORES POR DEFECTO (se reemplazan con el contenido publicado desde el panel)
+
+const HERO_INICIAL = {
+  badge: 'Fundación de Rescate Animal',
+  titulo_inicio: 'Dale una ',
+  titulo_acento: 'segunda oportunidad',
+  titulo_fin: ' a quien lo necesita.',
+  descripcion: 'Trabajamos incansablemente para brindar atención médica, resguardo y familias amorosas a la fauna vulnerable en La Grita - Táchira.',
+  imagen_url: null,
+  imagen_frontal_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
+}
+
+// Valores por defecto de las secciones editables desde el panel (Contenido Web)
+const ESTADISTICAS_INICIALES = [
+  { valor: '+850', etiqueta: 'Rescates Exitosos' },
+  { valor: '+420', etiqueta: 'Familias Encontradas' },
+  { valor: '24/7', etiqueta: 'Atención Continua' },
 ]
 
-const jornadasMock = [
-  { JORNAD_ID: 1, JORNAD_NO: 'Gran Jornada de Vacunación',      JORNAD_FE: '2026-07-15', SECTOR_NO: 'Plaza Bolívar, La Grita',  JORNAD_DE: 'Vacunación antirrábica y desparasitación gratuita para toda la comunidad. ¡Asiste con tu mascota!' },
-  { JORNAD_ID: 2, JORNAD_NO: 'Operativo de Esterilización',     JORNAD_FE: '2026-07-22', SECTOR_NO: 'Sede Misión Nevado',        JORNAD_DE: 'Esterilización a bajo costo para perros y gatos. Requiere cita previa asignada en la sede.' },
-  { JORNAD_ID: 3, JORNAD_NO: 'Campaña de Desparasitación',      JORNAD_FE: '2026-08-05', SECTOR_NO: 'Sector Las Delicias',       JORNAD_DE: 'Jornada comunitaria de desparasitación con atención veterinaria especializada. Entrada libre.' },
-]
+const CONTACTO_INICIAL = {
+  descripcion: 'Protegiendo la vida animal y gestionando rescates a través de la plataforma SISCVI.',
+  direccion: 'La Grita, Municipio Jáuregui, Edo. Táchira',
+  telefono: '0414-7599094',
+  email: 'soporte@sisvic.org.ve',
+  horario: 'Lunes a Sábado: 8:00 AM — 5:00 PM',
+}
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -46,13 +63,12 @@ function calcularEdad(fechaNac) {
 function formatearFecha(fechaISO) {
   if (!fechaISO) return ''
   const [año, mes, dia] = fechaISO.split('-')
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
   return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]}, ${año}`
 }
 
 const eInputPub = (dm) =>
-  `w-full border p-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] transition-all ${
-    dm ? 'bg-[#1a1e22] border-slate-700 text-white placeholder-slate-400' : 'bg-white border-gray-200 text-[#212529] placeholder-gray-400 shadow-sm'
+  `w-full border p-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] transition-all ${dm ? 'bg-[#1a1e22] border-slate-700 text-white placeholder-slate-400' : 'bg-white border-gray-200 text-[#212529] placeholder-gray-400 shadow-sm'
   }`
 
 // ─── BADGE DE DISPONIBILIDAD ──────────────────────────────────────────────────
@@ -81,9 +97,8 @@ function NavbarPublica({ dm, toggleDm }) {
 
   const botonDm = (
     <button onClick={toggleDm}
-      className={`p-2.5 rounded-full border transition-all hover:scale-110 shrink-0 ${
-        dm ? 'border-[#D4AC4E]/30 bg-[#212529] text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white/40 text-[#2D6A4F]'
-      }`}
+      className={`p-2.5 rounded-full border transition-all hover:scale-110 shrink-0 ${dm ? 'border-[#D4AC4E]/30 bg-[#212529] text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white/40 text-[#2D6A4F]'
+        }`}
       title={dm ? 'Modo claro' : 'Modo oscuro'}
     >
       {dm
@@ -94,9 +109,8 @@ function NavbarPublica({ dm, toggleDm }) {
   )
 
   return (
-    <nav className={`fixed w-full top-0 z-50 backdrop-blur-lg border-b transition-colors duration-300 ${
-      dm ? 'bg-[#121416]/70 border-white/5' : 'bg-[#FFEFD1]/50 border-[#2D6A4F]/10'
-    }`}>
+    <nav className={`fixed w-full top-0 z-50 backdrop-blur-lg border-b transition-colors duration-300 ${dm ? 'bg-[#121416]/70 border-white/5' : 'bg-[#FFEFD1]/50 border-[#2D6A4F]/10'
+      }`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex justify-between items-center">
         <img src={logoNevado} alt="Logo Misión Nevado" className="h-12 md:h-16 lg:h-20 object-contain drop-shadow-sm" />
 
@@ -118,9 +132,8 @@ function NavbarPublica({ dm, toggleDm }) {
           {botonDm}
           <button
             onClick={() => setMenuMovilAbierto(v => !v)}
-            className={`p-2.5 rounded-full border transition-all ${
-              dm ? 'border-white/10 bg-white/5 text-white' : 'border-[#2D6A4F]/20 bg-white/40 text-[#2D6A4F]'
-            }`}
+            className={`p-2.5 rounded-full border transition-all ${dm ? 'border-white/10 bg-white/5 text-white' : 'border-[#2D6A4F]/20 bg-white/40 text-[#2D6A4F]'
+              }`}
             aria-label="Menú"
           >
             {menuMovilAbierto ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -129,21 +142,18 @@ function NavbarPublica({ dm, toggleDm }) {
       </div>
 
       {/* ── Menú desplegable móvil ── */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${
-        menuMovilAbierto ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-      }`}>
-        <div className={`px-4 pb-4 pt-2 flex flex-col gap-1 border-t ${
-          dm ? 'bg-[#121416]/95 border-white/5' : 'bg-[#FFEFD1]/95 border-[#2D6A4F]/10'
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuMovilAbierto ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}>
+        <div className={`px-4 pb-4 pt-2 flex flex-col gap-1 border-t ${dm ? 'bg-[#121416]/95 border-white/5' : 'bg-[#FFEFD1]/95 border-[#2D6A4F]/10'
+          }`}>
           {enlaces.map(enlace => (
             <a key={enlace}
               href={`#${enlace.toLowerCase()}`}
               onClick={() => setMenuMovilAbierto(false)}
-              className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
-                dm
-                  ? 'text-slate-200 hover:bg-white/10'
-                  : 'text-[#212529] hover:bg-[#2D6A4F]/10'
-              }`}
+              className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all ${dm
+                ? 'text-slate-200 hover:bg-white/10'
+                : 'text-[#212529] hover:bg-[#2D6A4F]/10'
+                }`}
             >
               {enlace}
             </a>
@@ -156,18 +166,27 @@ function NavbarPublica({ dm, toggleDm }) {
 
 // ─── TARJETA DE ADOPCIÓN ──────────────────────────────────────────────────────
 
+// Fotos de Cloudinary: se piden a un ancho razonable, en formato y calidad automáticos
+// (sin recortar). Cualquier otra URL se usa tal cual.
+const optimizarFoto = (url) =>
+  typeof url === 'string' && url.includes('res.cloudinary.com') && url.includes('/upload/')
+    ? url.replace('/upload/', '/upload/w_700,c_limit,f_auto,q_auto/')
+    : url
+
 function TarjetaAdopcion({ dm, paciente, onSolicitar }) {
   const disponible = paciente.ADOPCI_ST === 'DISPONIBLE'
-  const edad       = calcularEdad(paciente.ADOPCI_FN)
+  const edad = calcularEdad(paciente.ADOPCI_FN)
 
   return (
-    <div className={`rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-md ${
-      dm ? 'bg-[#1a1e22]/90 border border-white/8' : 'bg-white/90 border border-slate-200'
-    }`}>
-      {/* Imagen */}
-      <div className="relative h-56 overflow-hidden group">
-        <img src={paciente.ADOPCI_FT} alt={paciente.ADOPCI_NO}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+    <div className={`rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-md ${dm ? 'bg-[#1a1e22]/90 border border-white/8' : 'bg-white/90 border border-slate-200'
+      }`}>
+      {/* Imagen — alto fijo igual en todas las tarjetas; la foto se ve completa
+          (sin recortes) sobre un fondo difuminado de la misma imagen */}
+      <div className="relative h-64 overflow-hidden group bg-gray-100">
+        <img src={optimizarFoto(paciente.ADOPCI_FT)} alt="" aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70" />
+        <img src={optimizarFoto(paciente.ADOPCI_FT)} alt={paciente.ADOPCI_NO}
+          className="relative w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute top-3 left-3"><BadgeDisponibilidad estado={paciente.ADOPCI_ST} /></div>
         <div className="absolute top-3 right-3">
           <span className="bg-[#D4AC4E] text-[#212529] text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
@@ -184,10 +203,9 @@ function TarjetaAdopcion({ dm, paciente, onSolicitar }) {
         </p>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
-          {[edad, paciente.ADOPCI_SE, `${paciente.ADOPCI_PE} kg`].map(etq => (
-            <span key={etq} className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border ${
-              dm ? 'bg-white/8 text-slate-300 border-white/10' : 'bg-gray-50 text-gray-700 border-gray-200'
-            }`}>
+          {[edad, paciente.ADOPCI_SE, paciente.ADOPCI_PE ? `${paciente.ADOPCI_PE} kg` : null].filter(Boolean).map(etq => (
+            <span key={etq} className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border ${dm ? 'bg-white/8 text-slate-300 border-white/10' : 'bg-gray-50 text-gray-700 border-gray-200'
+              }`}>
               {etq}
             </span>
           ))}
@@ -200,11 +218,10 @@ function TarjetaAdopcion({ dm, paciente, onSolicitar }) {
         <button
           onClick={() => disponible && onSolicitar(paciente)}
           disabled={!disponible}
-          className={`w-full py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all ${
-            disponible
-              ? 'bg-[#D4AC4E] text-[#212529] hover:bg-[#c49b3d] hover:shadow-md cursor-pointer'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+          className={`w-full py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all ${disponible
+            ? 'bg-[#D4AC4E] text-[#212529] hover:bg-[#c49b3d] hover:shadow-md cursor-pointer'
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
         >
           <PawPrint className="w-4 h-4" />
           {disponible ? 'Quiero Adoptarlo' : 'En Proceso de Adopción'}
@@ -216,8 +233,8 @@ function TarjetaAdopcion({ dm, paciente, onSolicitar }) {
 
 // ─── MODAL DE ADOPCIÓN ────────────────────────────────────────────────────────
 
-function ModalAdopcion({ dm, paciente, onCerrar }) {
-  const [enviado,  setEnviado]  = useState(false)
+function ModalAdopcion({ dm, paciente, onCerrar, onEnviada }) {
+  const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [datos, setDatos] = useState({ nombre: '', email: '', telefono: '', mensaje: '' })
 
@@ -227,13 +244,11 @@ function ModalAdopcion({ dm, paciente, onCerrar }) {
     e.preventDefault()
     setEnviando(true)
     try {
-      await fetch('/api/adopciones/solicitudes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ADOPCI_ID: paciente.ADOPCI_ID, ...datos }),
-      })
-    } catch { /* continúa al estado de éxito */ }
-    finally { setEnviando(false); setEnviado(true) }
+      await enviarAlBackend('/adopciones/solicitudes', { ADOPCI_ID: paciente.ADOPCI_ID, ...datos })
+      setEnviado(true)
+      onEnviada?.(paciente.ADOPCI_ID)
+    } catch (err) { alert(err.message) }
+    finally { setEnviando(false) }
   }
 
   const cardBg = dm ? 'bg-[#1e2226] border-white/10' : 'bg-white border-gray-200'
@@ -281,9 +296,9 @@ function ModalAdopcion({ dm, paciente, onCerrar }) {
               </div>
 
               <form onSubmit={enviar} className="space-y-3">
-                <input type="text"  name="nombre"   placeholder="Tu nombre completo"   required value={datos.nombre}   onChange={cambiar} className={eI} />
-                <input type="email" name="email"    placeholder="Correo electrónico"    required value={datos.email}    onChange={cambiar} className={eI} />
-                <input type="tel"   name="telefono" placeholder="Teléfono de contacto"  required value={datos.telefono} onChange={cambiar} className={eI} />
+                <input type="text" name="nombre" placeholder="Tu nombre completo" required value={datos.nombre} onChange={cambiar} className={eI} />
+                <input type="email" name="email" placeholder="Correo electrónico" required value={datos.email} onChange={cambiar} className={eI} />
+                <input type="tel" name="telefono" placeholder="Teléfono de contacto" required value={datos.telefono} onChange={cambiar} className={eI} />
                 <textarea name="mensaje" rows={3}
                   placeholder="Cuéntanos por qué quieres adoptar a este paciente (opcional)"
                   value={datos.mensaje} onChange={cambiar}
@@ -306,9 +321,8 @@ function ModalAdopcion({ dm, paciente, onCerrar }) {
 
 function TarjetaJornada({ dm, jornada }) {
   return (
-    <div className={`rounded-2xl p-7 border flex flex-col sm:flex-row gap-6 items-start transition-all hover:shadow-lg ${
-      dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
-    }`}>
+    <div className={`rounded-2xl p-7 border flex flex-col sm:flex-row gap-6 items-start transition-all hover:shadow-lg ${dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
+      }`}>
       <div className="w-16 h-16 bg-[#D4AC4E] rounded-2xl flex items-center justify-center shrink-0 shadow-sm rotate-3">
         <Calendar className="w-7 h-7 text-[#212529]" />
       </div>
@@ -336,8 +350,8 @@ function TarjetaJornada({ dm, jornada }) {
 
 function SeccionRegistro({ dm }) {
   const [tipoActivo, setTipoActivo] = useState(null)
-  const [enviado,    setEnviado]    = useState(false)
-  const [enviando,   setEnviando]   = useState(false)
+  const [enviado, setEnviado] = useState(false)
+  const [enviando, setEnviando] = useState(false)
 
   const eI = eInputPub(dm)
   const eL = `block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`
@@ -352,15 +366,16 @@ function SeccionRegistro({ dm }) {
     e.preventDefault()
     setEnviando(true)
     const datos = Object.fromEntries(new FormData(e.target))
-    const endpoint = tipoActivo === 'Voluntario' ? '/api/voluntarios' : '/api/proteccionistas'
-    try { await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) }) }
-    catch { /* continúa al éxito */ }
-    finally { setEnviando(false); setEnviado(true) }
+    const endpoint = tipoActivo === 'Voluntario' ? '/voluntarios' : '/proteccionistas'
+    try {
+      await enviarAlBackend(endpoint, datos)
+      setEnviado(true)
+    } catch (err) { alert(err.message) }
+    finally { setEnviando(false) }
   }
 
-  const cardBg = `rounded-3xl border-t-8 border-t-[#D4AC4E] border p-8 md:p-10 ${
-    dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
-  }`
+  const cardBg = `rounded-3xl border-t-8 border-t-[#D4AC4E] border p-8 md:p-10 ${dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
+    }`
 
   return (
     <section className={`py-12 md:py-24 border-t transition-colors duration-300 ${dm ? 'border-white/5' : 'border-slate-200/60'}`} id="voluntariado">
@@ -379,11 +394,10 @@ function SeccionRegistro({ dm }) {
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
           {['Proteccionista', 'Voluntario'].map(tipo => (
             <button key={tipo} type="button" onClick={() => handleToggle(tipo)}
-              className={`px-8 py-4 rounded-2xl font-bold border transition-all duration-300 hover:scale-[1.02] ${
-                tipoActivo === tipo
-                  ? 'bg-[#D4AC4E] text-[#212529] border-[#D4AC4E] ring-4 ring-[#D4AC4E]/20'
-                  : dm ? 'border-slate-700 text-slate-300 hover:border-slate-500' : 'border-slate-300 text-slate-600 hover:border-slate-400'
-              }`}>
+              className={`px-8 py-4 rounded-2xl font-bold border transition-all duration-300 hover:scale-[1.02] ${tipoActivo === tipo
+                ? 'bg-[#D4AC4E] text-[#212529] border-[#D4AC4E] ring-4 ring-[#D4AC4E]/20'
+                : dm ? 'border-slate-700 text-slate-300 hover:border-slate-500' : 'border-slate-300 text-slate-600 hover:border-slate-400'
+                }`}>
               Soy {tipo}
             </button>
           ))}
@@ -418,6 +432,7 @@ function SeccionRegistro({ dm }) {
                         <div><label className={eL}>Cédula de Identidad</label><input name="VOLUN_CI" placeholder="V-12345678" required className={eI} /></div>
                         <div><label className={eL}>Teléfono Principal</label><input name="VOLUN_TP" placeholder="0414-1234567" required className={eI} /></div>
                         <div><label className={eL}>Teléfono Secundario</label><input name="VOLUN_TS" placeholder="0277-1234567" className={eI} /></div>
+                        <div className="md:col-span-2"><label className={eL}>Correo Electrónico (opcional)</label><input type="email" name="VOLUN_EM" placeholder="usuario@correo.com" className={eI} /></div>
                         <div className="md:col-span-2"><label className={eL}>Organización Social</label><input name="VOLUN_OS" placeholder="Ej: Fundación Huellas" className={eI} /></div>
                       </div>
                     </div>
@@ -460,6 +475,7 @@ function SeccionRegistro({ dm }) {
                         <div><label className={eL}>Nombres Completos</label><input name="PRTEC_NO" placeholder="Ana María Pérez" required className={eI} /></div>
                         <div><label className={eL}>Cédula</label><input name="PRTEC_CI" placeholder="V-12345678" required className={eI} /></div>
                         <div><label className={eL}>Teléfono</label><input name="PRTEC_TP" placeholder="0414-1234567" required className={eI} /></div>
+                        <div className="md:col-span-3"><label className={eL}>Correo Electrónico (opcional)</label><input type="email" name="PRTEC_EM" placeholder="usuario@correo.com" className={eI} /></div>
                       </div>
                     </div>
                     <div>
@@ -514,9 +530,9 @@ function SeccionRegistro({ dm }) {
 // ─── SECCIÓN SEGUIMIENTO ──────────────────────────────────────────────────────
 
 function SeccionSeguimiento({ dm }) {
-  const [email,    setEmail]    = useState('')
+  const [email, setEmail] = useState('')
   const [resultado, setResultado] = useState(null)
-  const [buscado,  setBuscado]  = useState(false)
+  const [buscado, setBuscado] = useState(false)
   const [buscando, setBuscando] = useState(false)
 
   const buscar = async (e) => {
@@ -524,18 +540,19 @@ function SeccionSeguimiento({ dm }) {
     setBuscando(true)
     setBuscado(false)
     try {
-      const res = await fetch(`/api/seguimiento?email=${encodeURIComponent(email)}`)
-      if (res.ok) { const datos = await res.json(); setResultado(datos.tramite ?? null) }
+      // Acepta cédula o correo; el backend devuelve todos los trámites de la persona
+      const res = await fetch(`${API}/seguimiento?email=${encodeURIComponent(email.trim())}`)
+      if (res.ok) { const datos = await res.json(); setResultado(datos.tramites?.length ? datos.tramites : null) }
       else setResultado(null)
     } catch { setResultado(null) }
     finally { setBuscado(true); setBuscando(false) }
   }
 
   const BADGE_ESTADO = {
-    'Aprobado':   'bg-emerald-100 text-emerald-700 border-emerald-200',
+    'Aprobado': 'bg-emerald-100 text-emerald-700 border-emerald-200',
     'Completado': 'bg-sky-100     text-sky-700     border-sky-200',
-    'En espera':  'bg-amber-100   text-amber-700   border-amber-200',
-    'Pendiente':  'bg-amber-100   text-amber-700   border-amber-200',
+    'En espera': 'bg-amber-100   text-amber-700   border-amber-200',
+    'Pendiente': 'bg-amber-100   text-amber-700   border-amber-200',
   }
 
   const cardBg = `p-8 rounded-3xl border ${dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'}`
@@ -546,13 +563,13 @@ function SeccionSeguimiento({ dm }) {
         <div className="text-center mb-8 md:mb-10">
           <h2 className={`text-2xl sm:text-4xl font-extrabold mb-4 ${dm ? 'text-white' : 'text-[#212529]'}`}>Consulta de Seguimiento</h2>
           <p className={`text-lg ${dm ? 'text-slate-300' : 'text-slate-600'}`}>
-            Verifica el estado de tu gestión o colaboración ingresando tu correo electrónico.
+            Verifica el estado de tu gestión o colaboración ingresando tu cédula o correo electrónico.
           </p>
         </div>
 
         <div className={cardBg}>
           <form onSubmit={buscar} className="flex flex-col md:flex-row gap-3">
-            <input type="email" placeholder="Ej: usuario@correo.com"
+            <input type="text" placeholder="Ej: V-12345678 o usuario@correo.com"
               value={email} onChange={e => setEmail(e.target.value)} required
               className={eInputPub(dm) + ' flex-1'} />
             <button type="submit" disabled={buscando}
@@ -564,36 +581,38 @@ function SeccionSeguimiento({ dm }) {
             </button>
           </form>
 
-          {buscado && (
+          {buscado && resultado && resultado.map((tramite, i) => (
+            <div key={i} className={`mt-6 p-5 rounded-2xl border ${dm ? 'bg-[#121416] border-white/8' : 'bg-white border-gray-100 shadow-sm'}`}>
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${dm ? 'text-slate-400' : 'text-gray-400'}`}>Trámite encontrado</p>
+                  <h4 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>{tramite.tipo}</h4>
+                  <p className={`text-sm mt-0.5 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>
+                    Fecha de registro: <span className="font-medium">{tramite.fecha}</span>
+                  </p>
+                </div>
+                <span className={`text-xs font-bold px-4 py-2 rounded-full border shrink-0 ${BADGE_ESTADO[tramite.estado] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                  {tramite.estado}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {buscado && !resultado && (
             <div className={`mt-6 p-5 rounded-2xl border ${dm ? 'bg-[#121416] border-white/8' : 'bg-white border-gray-100 shadow-sm'}`}>
-              {resultado ? (
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div>
-                    <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${dm ? 'text-slate-400' : 'text-gray-400'}`}>Trámite encontrado</p>
-                    <h4 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>{resultado.COLAB_TI ?? resultado.tipo}</h4>
-                    <p className={`text-sm mt-0.5 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>
-                      Fecha de registro: <span className="font-medium">{resultado.FEC_REGIS ?? resultado.fecha}</span>
-                    </p>
-                  </div>
-                  <span className={`text-xs font-bold px-4 py-2 rounded-full border shrink-0 ${BADGE_ESTADO[resultado.COLAB_ES ?? resultado.estado] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                    {resultado.COLAB_ES ?? resultado.estado}
-                  </span>
+              <div className="text-center py-6">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${dm ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${dm ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                    <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <p className={`font-medium ${dm ? 'text-slate-300' : 'text-gray-700'}`}>
-                    No encontramos ningún trámite para "{email}"
-                  </p>
-                  <p className={`text-sm mt-1 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>
-                    Verifica el correo e intenta nuevamente.
-                  </p>
-                </div>
-              )}
+                <p className={`font-medium ${dm ? 'text-slate-300' : 'text-gray-700'}`}>
+                  No encontramos ningún trámite para "{email}"
+                </p>
+                <p className={`text-sm mt-1 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>
+                  Verifica la cédula o el correo e intenta nuevamente.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -605,9 +624,18 @@ function SeccionSeguimiento({ dm }) {
 // ─── SECCIÓN DENUNCIAS ────────────────────────────────────────────────────────
 
 function SeccionDenuncias({ dm }) {
-  const [enviado,  setEnviado]  = useState(false)
+  const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [anonimo,  setAnonimo]  = useState(false)
+  const [anonimo, setAnonimo] = useState(false)
+  const [sectores, setSectores] = useState([])
+
+  // Sectores reales de la base de datos (TM_SECTOR)
+  useEffect(() => {
+    fetch(`${API}/catalogos/sectores`)
+      .then(res => (res.ok ? res.json() : { registros: [] }))
+      .then(datos => setSectores(datos.registros ?? []))
+      .catch(() => setSectores([]))
+  }, [])
 
   const eI = eInputPub(dm)
   const eL = `block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`
@@ -616,14 +644,15 @@ function SeccionDenuncias({ dm }) {
     e.preventDefault()
     setEnviando(true)
     const datos = Object.fromEntries(new FormData(e.target))
-    try { await fetch('/api/denuncias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) }) }
-    catch { /* continúa */ }
-    finally { setEnviando(false); setEnviado(true) }
+    try {
+      await enviarAlBackend('/denuncias', datos)
+      setEnviado(true)
+    } catch (err) { alert(err.message) }
+    finally { setEnviando(false) }
   }
 
-  const cardBg = `max-w-3xl mx-auto p-8 md:p-10 rounded-3xl border-t-8 border-t-[#E76F51] border ${
-    dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
-  }`
+  const cardBg = `max-w-3xl mx-auto p-8 md:p-10 rounded-3xl border-t-8 border-t-[#E76F51] border ${dm ? 'bg-[#1a1e22]/90 border-white/8' : 'bg-white/80 border-slate-200 shadow-sm'
+    }`
 
   return (
     <section className={`py-12 md:py-24 border-t transition-colors duration-300 ${dm ? 'border-white/5' : 'border-slate-200/60'}`} id="denuncias">
@@ -673,13 +702,18 @@ function SeccionDenuncias({ dm }) {
                   className={eI + (anonimo ? ' opacity-40 cursor-not-allowed' : '')} />
               </div>
 
+              <div>
+                <label className={eL}>Correo para recibir novedades (opcional)</label>
+                <input type="email" name="DENUNC_EM" placeholder="usuario@correo.com" className={eI} />
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className={eL}>Sector o Comunidad</label>
                   <select name="SECTOR_ID" required className={eI}>
                     <option value="">Seleccione un sector...</option>
-                    {['Casco Central', 'San José', 'Las Delicias', 'Sector Norte', 'Otro Sector'].map(s => (
-                      <option key={s} value={s}>{s}</option>
+                    {sectores.map(s => (
+                      <option key={s.sector_id} value={s.sector_id}>{s.sector_no}</option>
                     ))}
                   </select>
                 </div>
@@ -712,7 +746,7 @@ function SeccionDenuncias({ dm }) {
 
 // ─── PIE DE PÁGINA ────────────────────────────────────────────────────────────
 
-function PiePublico({ dm }) {
+function PiePublico({ dm, contacto = CONTACTO_INICIAL }) {
   const tLink = dm ? 'text-slate-400 hover:text-[#D4AC4E]' : 'text-[#212529]/60 hover:text-[#2D6A4F]'
   const tHead = dm ? 'text-[#D4AC4E]' : 'text-[#2D6A4F]'
   const tBody = dm ? 'text-slate-400' : 'text-[#212529]/70'
@@ -721,28 +755,27 @@ function PiePublico({ dm }) {
     : 'bg-[#2D6A4F]/10 text-[#2D6A4F] hover:bg-[#2D6A4F] hover:text-white'
 
   const ICONOS_REDES = {
-    Facebook:  'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+    Facebook: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
     Instagram: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z',
-    Twitter:   'M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z',
+    Twitter: 'M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z',
   }
 
   return (
-    <footer className={`relative pt-16 pb-8 border-t backdrop-blur-xl transition-colors ${
-      dm ? 'bg-[#121416]/40 border-white/5' : 'bg-white/40 border-white/60 shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.03)]'
-    }`}>
+    <footer className={`relative pt-16 pb-8 border-t backdrop-blur-xl transition-colors ${dm ? 'bg-[#121416]/40 border-white/5' : 'bg-white/40 border-white/60 shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.03)]'
+      }`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 mb-10">
 
         <div className="flex flex-col gap-4">
           <img src={logoNevado} alt="Logo Misión Nevado" className="h-14 object-contain w-fit drop-shadow-sm" />
           <p className={`text-sm leading-relaxed ${tBody}`}>
-            Protegiendo la vida animal y gestionando rescates a través de la plataforma SISCVI.
+            {contacto.descripcion}
           </p>
         </div>
 
         <div>
           <h4 className={`font-bold mb-5 ${tHead}`}>Accesos Rápidos</h4>
           <ul className={`text-sm flex flex-col gap-2.5 ${tBody}`}>
-            {[['inicio','Volver al Inicio'],['adopciones','Cartelera de Adopciones'],['seguimiento','Seguimiento de Trámites'],['denuncias','Reportar Denuncia']].map(([href, label]) => (
+            {[['inicio', 'Volver al Inicio'], ['adopciones', 'Cartelera de Adopciones'], ['seguimiento', 'Seguimiento de Trámites'], ['denuncias', 'Reportar Denuncia']].map(([href, label]) => (
               <li key={href}><a href={`#${href}`} className={`font-medium transition-colors ${tLink}`}>{label}</a></li>
             ))}
           </ul>
@@ -751,9 +784,9 @@ function PiePublico({ dm }) {
         <div>
           <h4 className={`font-bold mb-5 ${tHead}`}>Sede y Contacto</h4>
           <ul className={`text-sm flex flex-col gap-3.5 ${tBody}`}>
-            <li className="font-medium">📍 La Grita, Municipio Jáuregui, Edo. Táchira</li>
-            <li className="font-medium">📞 0414-7599094</li>
-            <li className="font-medium">✉️ soporte@sisvic.org.ve</li>
+            <li className="font-medium">📍 {contacto.direccion}</li>
+            <li className="font-medium">📞 {contacto.telefono}</li>
+            <li className="font-medium">✉️ {contacto.email}</li>
           </ul>
         </div>
 
@@ -768,13 +801,14 @@ function PiePublico({ dm }) {
             ))}
           </div>
           <p className={`text-sm font-medium ${tBody}`}>
-            Horario de Sede Central:<br />Lunes a Sábado: 8:00 AM — 5:00 PM
+            Horario de Sede Central:<br />{contacto.horario}
           </p>
         </div>
       </div>
 
       <div className={`text-center text-xs font-medium tracking-wide ${dm ? 'text-slate-500' : 'text-[#212529]/40'}`}>
-        © 2026 Plataforma Pública SISCVI — Misión Nevado. Todos los derechos reservados.
+        Plataforma Pública SISCVI — Misión Nevado
+        © 2026 ING JULIETH ANDRADE RAMIREZ — UNEFA NUCLEO TACHIRA.
       </div>
     </footer>
   )
@@ -783,53 +817,88 @@ function PiePublico({ dm }) {
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 
 export default function App() {
-  const [dm,             setDm]             = useState(false)
-  const [hero,           setHero]           = useState(HERO_INICIAL)
-  const [pacientes,      setPacientes]      = useState(pacientesMock)
-  const [jornadas,       setJornadas]       = useState(jornadasMock)
-  const [pacienteModal,  setPacienteModal]  = useState(null)
-  const [cargando,       setCargando]       = useState(true)
+  const [dm, setDm] = useState(false)
+  const [hero, setHero] = useState(HERO_INICIAL)
+  const [estadisticas, setEstadisticas] = useState(ESTADISTICAS_INICIALES)
+  const [contacto, setContacto] = useState(CONTACTO_INICIAL)
+  const [pacientes, setPacientes] = useState([])
+  const [jornadas, setJornadas] = useState([])
+  const [pacienteModal, setPacienteModal] = useState(null)
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
     const cargarHero = async () => {
       try {
-        const res = await fetch('/api/contenido-web')
+        const res = await fetch(`${API}/contenido-web`)
         if (res.ok) {
           const datos = await res.json()
-          if (datos.hero) setHero(prev => ({ ...prev, ...datos.hero }))
+          if (datos.hero) {
+            // Solo se aceptan imágenes con URL completa; si no, se conservan las actuales
+            const { imagen_url, imagen_frontal_url, ...textos } = datos.hero
+            const esUrl = (u) => typeof u === 'string' && /^https?:\/\//.test(u)
+            setHero(prev => ({
+              ...prev,
+              ...textos,
+              ...(esUrl(imagen_url) && { imagen_url }),
+              ...(esUrl(imagen_frontal_url) && { imagen_frontal_url }),
+            }))
+          }
+          if (datos.estadisticas?.length) setEstadisticas(datos.estadisticas)
+          if (datos.contacto) setContacto(prev => ({ ...prev, ...datos.contacto }))
         }
-      } catch { /* usa HERO_INICIAL */ }
+      } catch { /* usa los valores iniciales */ }
     }
 
     const cargarPacientes = async () => {
       try {
-        const res = await fetch('/api/adopciones?visibles=1')
+        const res = await fetch(`${API}/adopciones?visibles=1`)
         if (res.ok) {
           const datos = await res.json()
           const lista = datos.pacientes ?? datos.registros ?? []
-          if (lista.length > 0) setPacientes(lista)
+          setPacientes(lista)
         }
-      } catch { /* usa mock */ }
+      } catch { /* sin conexión: se muestra el mensaje de "no hay pacientes" */ }
       finally { setCargando(false) }
     }
 
     const cargarJornadas = async () => {
       try {
-        const res = await fetch('/api/jornadas?visibles=1')
+        const res = await fetch(`${API}/jornadas?visibles=1`)
         if (res.ok) {
           const datos = await res.json()
           const lista = datos.jornadas ?? []
-          if (lista.length > 0) setJornadas(lista)
+          setJornadas(lista)
         }
-      } catch { /* usa mock */ }
+      } catch { /* sin conexión: se muestra el mensaje de "no hay jornadas" */ }
     }
 
-    cargarHero()
-    cargarPacientes()
-    cargarJornadas()
+    const cargarTodo = () => { cargarHero(); cargarPacientes(); cargarJornadas() }
+    cargarTodo()
+
+    // Lo que se cambie desde el panel aparece sin recargar: se vuelve a consultar
+    // cada 30 s y cada vez que el visitante regresa a la pestaña.
+    const intervalo = setInterval(cargarTodo, 30000)
+    const alVolver = () => { if (document.visibilityState === 'visible') cargarTodo() }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => {
+      clearInterval(intervalo)
+      document.removeEventListener('visibilitychange', alVolver)
+    }
   }, [])
 
-  const fondoHero   = hero.imagen_url   || imagenHero
+  // Título del hero con los espacios correctos entre sus tres partes (evita "vidaanimalen")
+  const tituloHero = (() => {
+    const ini = (hero.titulo_inicio ?? '').trim()
+    const acc = (hero.titulo_acento ?? '').trim()
+    const fin = (hero.titulo_fin ?? '').trim()
+    return {
+      antes: ini && (acc || fin) ? `${ini} ` : ini,
+      acento: acc,
+      despues: fin && (ini || acc) && !/^[.,;:!?)]/.test(fin) ? ` ${fin}` : fin,
+    }
+  })()
+
+  const fondoHero = hero.imagen_url || imagenHero
   const imagenFrente = hero.imagen_frontal_url
 
   const pacientesVisibles = pacientes.filter(p => p.ADOPCI_ST !== 'ADOPTADO')
@@ -853,9 +922,9 @@ export default function App() {
               {hero.badge}
             </div>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold mb-5 md:mb-6 leading-[1.1] tracking-tight drop-shadow-md">
-              {hero.titulo_inicio}
-              <span className="text-[#D4AC4E]">{hero.titulo_acento}</span>
-              {hero.titulo_fin}
+              {tituloHero.antes}
+              <span className="text-[#D4AC4E]">{tituloHero.acento}</span>
+              {tituloHero.despues}
             </h1>
             <p className="text-lg opacity-90 mb-8 max-w-lg font-medium leading-relaxed">
               {hero.descripcion}
@@ -886,11 +955,7 @@ export default function App() {
       {/* ── BANNER IMPACTO ────────────────────────────────────────────────────── */}
       <section className="bg-[#D4AC4E] py-10 md:py-12 border-b-8 border-[#2D6A4F]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-[#212529]/10">
-          {[
-            { valor: '+850', etiqueta: 'Rescates Exitosos' },
-            { valor: '+420', etiqueta: 'Familias Encontradas' },
-            { valor: '24/7', etiqueta: 'Atención Continua' },
-          ].map(({ valor, etiqueta }) => (
+          {estadisticas.map(({ valor, etiqueta }) => (
             <div key={etiqueta} className="py-4">
               <h3 className="text-4xl font-black text-[#212529]">{valor}</h3>
               <p className="text-[#2D6A4F] font-bold uppercase tracking-wider mt-1 text-sm">{etiqueta}</p>
@@ -902,9 +967,8 @@ export default function App() {
       {/* ── CARTELERA DE ADOPCIÓN ─────────────────────────────────────────────── */}
       <main className="py-12 md:py-24 max-w-7xl mx-auto px-4 md:px-6" id="adopciones">
         <div className="text-center mb-10 md:mb-14">
-          <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-bold mb-4 ${
-            dm ? 'border-white/10 bg-white/5 text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white text-[#2D6A4F]'
-          }`}>
+          <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-bold mb-4 ${dm ? 'border-white/10 bg-white/5 text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white text-[#2D6A4F]'
+            }`}>
             <PawPrint className="w-3.5 h-3.5" /> Buscando Familia
           </span>
           <h2 className={`text-2xl sm:text-4xl font-extrabold mb-4 ${dm ? 'text-white' : 'text-[#212529]'}`}>Cartelera de Adopción</h2>
@@ -936,9 +1000,8 @@ export default function App() {
       <section className={`py-12 md:py-24 border-t transition-colors ${dm ? 'border-white/5 bg-[#121416]/30' : 'border-slate-200/60 bg-white/50'}`} id="jornadas">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="text-center mb-10 md:mb-14">
-            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-bold mb-4 ${
-              dm ? 'border-white/10 bg-white/5 text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white text-[#2D6A4F]'
-            }`}>
+            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-bold mb-4 ${dm ? 'border-white/10 bg-white/5 text-[#D4AC4E]' : 'border-[#2D6A4F]/20 bg-white text-[#2D6A4F]'
+              }`}>
               <Calendar className="w-3.5 h-3.5" /> Calendario de Eventos
             </span>
             <h2 className={`text-2xl sm:text-4xl font-extrabold mb-4 ${dm ? 'text-white' : 'text-[#212529]'}`}>Jornadas Programadas</h2>
@@ -960,13 +1023,14 @@ export default function App() {
         </div>
       </section>
 
-      <SeccionRegistro   dm={dm} />
+      <SeccionRegistro dm={dm} />
       <SeccionSeguimiento dm={dm} />
-      <SeccionDenuncias  dm={dm} />
-      <PiePublico        dm={dm} />
+      <SeccionDenuncias dm={dm} />
+      <PiePublico dm={dm} contacto={contacto} />
 
       {pacienteModal && (
-        <ModalAdopcion dm={dm} paciente={pacienteModal} onCerrar={() => setPacienteModal(null)} />
+        <ModalAdopcion dm={dm} paciente={pacienteModal} onCerrar={() => setPacienteModal(null)}
+          onEnviada={(id) => setPacientes(prev => prev.map(p => (p.ADOPCI_ID === id ? { ...p, ADOPCI_ST: 'EN PROCESO' } : p)))} />
       )}
     </div>
   )
